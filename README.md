@@ -17,7 +17,7 @@ Antes de executar o jogo, certifique-se de ter o Python 3.x instalado em sua má
 Este projeto utiliza a biblioteca **Pygame** para renderizar gráficos e gerenciar interações. Para instalar a biblioteca, execute o seguinte comando:
 
 ```bash
-python3 -m pip install pygame
+python -m pip install pygame
 ```
 
 ------------------------

@@ -9,11 +9,12 @@ pygame.init()
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 480
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Jogo de Animação")
+pygame.display.set_caption("aFroLower - spanks na geral")
 
 # Caminho da pasta onde estão as imagens
 IMAGE_FOLDER = 'char/'
 BACKGROUND_IMAGE = 'back/spring-forest-landscape.jpg'  # Caminho da imagem de fundo
+LOGO_IMAGE = 'logo/main.png'  # Caminho do logo
 
 # Carregar o arquivo JSON de animações
 with open('animations.json', 'r') as f:
@@ -21,6 +22,7 @@ with open('animations.json', 'r') as f:
 
 # Carregar imagens de fundo
 background = pygame.image.load(BACKGROUND_IMAGE)
+logo = pygame.image.load(LOGO_IMAGE)
 
 # Carregar imagens (substitua com seus próprios arquivos de imagem)
 def load_images(animation):
@@ -29,6 +31,34 @@ def load_images(animation):
     except Exception as e:
         print(f"Erro ao carregar imagens de {animation}: {e}")
         return []
+
+# Função de fade-in e fade-out
+def fade_in_out(duration, fade_out=False):
+    fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    fade_surface.fill((0, 0, 0))
+    clock = pygame.time.Clock()
+    
+    if fade_out:
+        alpha = 255
+    else:
+        alpha = 0
+
+    while alpha >= 0 and alpha <= 255:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+
+        if fade_out:
+            alpha -= 5  # Desce a opacidade
+        else:
+            alpha += 5  # Aumenta a opacidade
+
+        fade_surface.set_alpha(alpha)
+        screen.fill((0, 0, 0))
+        screen.blit(fade_surface, (0, 0))
+        pygame.display.flip()
+        clock.tick(30)
 
 # Personagem
 class Character(pygame.sprite.Sprite):
@@ -171,6 +201,27 @@ def reset_game():
 clock = pygame.time.Clock()
 running = True
 
+# Tela inicial (Splash Screen)
+# Exibir o logo por 3 segundos
+screen.fill((255, 255, 0))  # Limpa a tela
+screen.blit(logo, (SCREEN_WIDTH // 2 - logo.get_width() // 2, SCREEN_HEIGHT // 2 - logo.get_height() // 2))  # Centraliza o logo
+pygame.display.flip()
+pygame.time.delay(3000)  # Exibe o logo por 3 segundos
+
+# Fade-out após logo
+fade_in_out(30, fade_out=True)
+
+# Exibir o título por 4 segundos
+screen.fill((0, 0, 0))  # Limpa a tela
+font = pygame.font.Font(None, 72)
+title_text = font.render("aFroLower - spanks na geral", True, (255, 255, 255))
+screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 2))  # Centraliza o título
+pygame.display.flip()
+pygame.time.delay(4000)  # Exibe o título por 4 segundos
+
+# Fade-out após o título
+fade_in_out(30, fade_out=True)
+
 # Criar o personagem
 character = Character()
 all_sprites = pygame.sprite.Group(character)
@@ -211,6 +262,5 @@ while running:
     
     pygame.display.flip()
     clock.tick(30)  # Controla a taxa de atualização da tela (FPS)
-
 
 pygame.quit()
