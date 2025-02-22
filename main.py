@@ -132,6 +132,10 @@ class Character(pygame.sprite.Sprite):
             if keys[pygame.K_s]:  # Tecla 'S'
                 self.state = "deitando"
 
+            # Mudando para a animação de "hit" quando 'h' for pressionado
+            if keys[pygame.K_h]:  # Tecla 'H' para mudar a animação de hit
+                self.state = "hit"
+            
             # Atualizar animação
             self.image_list = load_images(self.state)
             if self.image_list:
@@ -182,12 +186,16 @@ def game_over():
     font_small = pygame.font.Font(None, 36)
     
     # Texto "GAME OVER"
-    text_large = font_large.render("GAME OVER", True, (255, 0, 0))
-    screen.blit(text_large, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 50))
-    
+    text_large = font_large.render("+ aFroLowers Morreu... +", True, (255, 0, 0))
+    # Centralizando o texto "GAME OVER"
+    text_large_rect = text_large.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+    screen.blit(text_large, text_large_rect)
+
     # Texto "Pressione R para reiniciar"
     text_small = font_small.render("Pressione R para reiniciar", True, (128, 0, 0))
-    screen.blit(text_small, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 + 20))
+    # Centralizando o texto "Pressione R para reiniciar"
+    text_small_rect = text_small.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+    screen.blit(text_small, text_small_rect)
 
 # Adicionar lógica para reiniciar o jogo
 def reset_game():
@@ -203,7 +211,7 @@ running = True
 
 # Tela inicial (Splash Screen)
 # Exibir o logo por 3 segundos
-screen.fill((255, 255, 0))  # Limpa a tela
+screen.fill((0, 0, 0))  # Limpa a tela
 screen.blit(logo, (SCREEN_WIDTH // 2 - logo.get_width() // 2, SCREEN_HEIGHT // 2 - logo.get_height() // 2))  # Centraliza o logo
 pygame.display.flip()
 pygame.time.delay(3000)  # Exibe o logo por 3 segundos
