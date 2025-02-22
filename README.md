@@ -12,3 +12,9 @@ Este projeto utiliza a biblioteca **Pygame** para renderizar gráficos e gerenci
 
 ```bash
 python3 -m pip install pygame
+
+e para rodar o game
+
+
+```bash
+python main.py
