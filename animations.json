@@ -1,0 +1,21 @@
+{"states": 
+  {
+    "parado": ["iddle1.png", "iddle2.png", "iddle3.png", "iddle4.png"],
+    "andando": ["walk1.png", "walk2.png", "walk3.png", "walk4.png", "walk5.png", "walk6.png", "walk7.png", "walk8.png"],
+    "correndo": ["run1.png", "run2.png", "run3.png", "run4.png", "run5.png", "run6.png", "run7.png", "run8.png"],
+    "pulando": ["jump1.png", "jump2.png", "jump3.png", "jump4.png", "jump5.png", "jump6.png", "jump7.png", "jump8.png", "jump9.png", "jump10.png", "jump11.png", "jump12.png"],
+    "deitando": ["lay1.png", "lay2.png", "lay3.png", "lay4.png"],
+    "atacando": ["attack1.png", "attack2.png", "attack3.png", "attack4.png", "attack5.png", "attack6.png"],
+    "morrendo": ["die1.png", "die2.png", "die3.png", "die4.png", "die5.png", "die6.png", "die7.png", "die8.png"],
+    "morto": ["die8.png"]
+  },
+  "teclas":{
+    "andando": "s, d",
+    "correndo": "shift + s, shift + d",
+    "pulando": "w",
+    "deitando": "s",
+    "atacando": "espaco"
+  }
+}
+
+
