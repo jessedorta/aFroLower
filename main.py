@@ -68,12 +68,16 @@ class Character(pygame.sprite.Sprite):
         self.y = SCREEN_HEIGHT - 100
         self.speed = 5
         self.health = 6  # Inicialmente 6 vidas
+        self.hits = 6  # A quantidade de hits começa com 6
         self.state = "parado"  # Estado inicial
         self.image_list = load_images(self.state)
         self.current_frame = 0
         self.image = self.image_list[self.current_frame]
         self.rect = self.image.get_rect(center=(self.x, self.y))
-        
+
+        # Inicializando a variável 'flipped' como True
+        self.flipped = True  # A imagem começa invertida (virada para a esquerda)
+
         # Controle de pulo
         self.is_jumping = False
         self.jump_height = 10
@@ -86,30 +90,41 @@ class Character(pygame.sprite.Sprite):
     def update(self, keys):
         # Se o personagem estiver morto, ele não pode mais fazer nada
         if self.state == "morto":
+            self.y = SCREEN_HEIGHT - 100  # Colocar o personagem no chão
             return  # O personagem não faz nada mais, ele fica parado no estado morto
 
         if self.state != "morrendo":  # Só processa o movimento se não estiver morrendo
             # Movimento horizontal
-            if keys[pygame.K_a]:  # Tecla 'A' ou 's'
+            if keys[pygame.K_a]:  # Tecla 'A' (esquerda)
                 self.x -= self.speed
                 self.state = "andando"
-                self.flip_image(False)  # Virar para a esquerda
-            elif keys[pygame.K_d]:  # Tecla 'D' ou 'd'
+                self.flip_image('esquerda')  # Virar para a esquerda
+
+            elif keys[pygame.K_d]:  # Tecla 'D' (direita)
                 self.x += self.speed
                 self.state = "andando"
-                self.flip_image(True)  # Virar para a direita
+                self.flip_image('direita')  # Virar para a direita
+
+            # Correndo (se pressionado Shift)
             elif keys[pygame.K_LSHIFT] and (keys[pygame.K_a] or keys[pygame.K_d]):  # Correndo
                 self.speed = 8
                 self.state = "correndo"
                 if keys[pygame.K_d]: 
-                    self.flip_image(True)  # Virar para a direita ao correr
+                    self.flip_image('direita')  # Virar para a direita ao correr
                 elif keys[pygame.K_a]:
-                    self.flip_image(False)  # Virar para a esquerda ao correr
+                    self.flip_image('esquerda')  # Virar para a esquerda ao correr
             else:
                 self.state = "parado"
                 self.speed = 5  # Volta a velocidade normal
-                self.flip_image(False)  # Deixar voltado para a esquerda
-                
+                # Não precisa mais inverter a imagem ao parar, o flip vai ser controlado pelos movimentos
+
+        # Atualização da animação do personagem
+        self.image_list = load_images(self.state)
+        if self.image_list:
+            self.current_frame = (self.current_frame + 1) % len(self.image_list)
+            self.image = self.image_list[self.current_frame]
+            self.rect = self.image.get_rect(center=(self.x, self.y))
+
             # Pulo
             if keys[pygame.K_w] and not self.is_jumping:  # Tecla 'W'
                 self.is_jumping = True
@@ -144,7 +159,7 @@ class Character(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect(center=(self.x, self.y))
 
         # Verificar se os hits chegaram a 0
-        if hits == 0 and self.state != "morrendo":
+        if self.hits == 0 and self.state != "morrendo":
             print("Hits chegaram a 0! Iniciando animação de morte.")
             self.state = "morrendo"
             self.image_list = load_images(self.state)
@@ -168,16 +183,25 @@ class Character(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect(center=(self.x, self.y))
 
     def flip_image(self, flip):
-        """Função para inverter a imagem do personagem dependendo da direção"""
-        if flip:
-            self.image = pygame.transform.flip(self.image, True, False)  # Inverte horizontalmente
-        else:
-            self.image = pygame.transform.flip(self.image, False, False)  # Deixa a imagem normal (não invertida)
+        print(f"Flip: {flip}, Flipped: {self.flipped}")
+
+        if flip == 'direita':  # Se a direção for para a direita
+            if self.flipped:  # Se a imagem estiver virada para a esquerda
+                self.image = pygame.transform.flip(self.image, True, False)  # Inverte apenas a imagem atual
+                self.flipped = False  # Marca como não invertida (virada para a direita)
+                print("Imagem virada para a direita")
+            
+        elif flip == 'esquerda':  # Se a direção for para a esquerda
+            if not self.flipped:  # Se a imagem não estiver virada para a esquerda
+                self.image = pygame.transform.flip(self.image, True, False)  # Inverte apenas a imagem atual
+                self.flipped = True  # Marca como invertida (virada para a esquerda)
+                print("Imagem virada para a esquerda")
+
 
 # Função para mostrar o contador de hits
-def show_hits(hits):
+def show_hits(character):
     font = pygame.font.Font(None, 36)
-    text = font.render(f"Hits: {hits}", True, (255, 0, 0))
+    text = font.render(f"Hits: {character.hits}", True, (255, 0, 0))
     screen.blit(text, (10, 10))
 
 # Função para mostrar a tela de morte
@@ -186,21 +210,20 @@ def game_over():
     font_small = pygame.font.Font(None, 36)
     
     # Texto "GAME OVER"
-    text_large = font_large.render("+ aFroLowers Morreu... +", True, (255, 0, 0))
+    text_large = font_large.render("+ Aqui acaba a sua odisseia, ou não? +", True, (255, 0, 0))
     # Centralizando o texto "GAME OVER"
-    text_large_rect = text_large.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+    text_large_rect = text_large.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 ))
     screen.blit(text_large, text_large_rect)
 
     # Texto "Pressione R para reiniciar"
     text_small = font_small.render("Pressione R para reiniciar", True, (128, 0, 0))
     # Centralizando o texto "Pressione R para reiniciar"
-    text_small_rect = text_small.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+    text_small_rect = text_small.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40 ))
     screen.blit(text_small, text_small_rect)
 
 # Adicionar lógica para reiniciar o jogo
 def reset_game():
-    global hits, character
-    hits = 6
+    global character
     character = Character()
     all_sprites.empty()
     all_sprites.add(character)
@@ -211,7 +234,7 @@ running = True
 
 # Tela inicial (Splash Screen)
 # Exibir o logo por 3 segundos
-screen.fill((0, 0, 0))  # Limpa a tela
+screen.fill((255, 255, 255))  # Limpa a tela
 screen.blit(logo, (SCREEN_WIDTH // 2 - logo.get_width() // 2, SCREEN_HEIGHT // 2 - logo.get_height() // 2))  # Centraliza o logo
 pygame.display.flip()
 pygame.time.delay(3000)  # Exibe o logo por 3 segundos
@@ -222,8 +245,8 @@ fade_in_out(30, fade_out=True)
 # Exibir o título por 4 segundos
 screen.fill((0, 0, 0))  # Limpa a tela
 font = pygame.font.Font(None, 72)
-title_text = font.render("aFroLower - spanks na geral", True, (255, 255, 255))
-screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 2))  # Centraliza o título
+title_text = font.render("Spanks na geral, Vol I -  floresta", True, (255, 255, 255))
+screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 2.5))  # Centraliza o título
 pygame.display.flip()
 pygame.time.delay(4000)  # Exibe o título por 4 segundos
 
@@ -234,23 +257,20 @@ fade_in_out(30, fade_out=True)
 character = Character()
 all_sprites = pygame.sprite.Group(character)
 
-# Contador de hits
-hits = 6
-
 # Loop principal
 while running:
     screen.fill((0, 0, 0))  # Limpar tela
 
     # Exibir o fundo
-    screen.blit(background, (0, -100))
+    screen.blit(background, (0, 0))
     
     # Gerenciar eventos
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_h and hits > 0:
-                hits -= 1
+            if event.key == pygame.K_h and character.hits > 0:
+                character.hits -= 1
             # Verifica se 'R' foi pressionado para reiniciar o jogo
             if event.key == pygame.K_r and character.state == "morto":
                 reset_game()
@@ -262,7 +282,7 @@ while running:
     all_sprites.draw(screen)
     
     # Mostrar contador de hits
-    show_hits(hits)
+    show_hits(character)
     
     # Verificar se o personagem está morto
     if character.state == "morto":
