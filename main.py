@@ -183,14 +183,11 @@ class Character(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect(center=(self.x, self.y))
 
     def flip_image(self, flip):
-        print(f"Flip: {flip}, Flipped: {self.flipped}")
-
         if flip == 'direita':  # Se a direção for para a direita
             if self.flipped:  # Se a imagem estiver virada para a esquerda
                 self.image = pygame.transform.flip(self.image, True, False)  # Inverte apenas a imagem atual
                 self.flipped = False  # Marca como não invertida (virada para a direita)
                 print("Imagem virada para a direita")
-            
         elif flip == 'esquerda':  # Se a direção for para a esquerda
             if not self.flipped:  # Se a imagem não estiver virada para a esquerda
                 self.image = pygame.transform.flip(self.image, True, False)  # Inverte apenas a imagem atual
