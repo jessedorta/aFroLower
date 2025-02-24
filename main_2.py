@@ -63,33 +63,46 @@ facing_right = False
 
 # Variáveis para animações
 last_h_pressed = False
+last_s_pressed = False
+last_w_pressed = False
 hit_animation_frames = []
 hit_frame_index = 0
 hit_animating = False
 dying_frame_index = 0
 dying = False
 dead = False
+dash_target = 0
+dash_current = 0
+dash_speed = 20
+jump_height = -10
+gravity = 0.8
+jump_velocity = 0
 
 # Função principal do jogo
 def main():
-    global character_state, character_images, character_rect, bg_offset_x, bg_offset_y, facing_right, life, current_life_image, last_h_pressed, hit_animation_frames, hit_frame_index, hit_animating, dying, dying_frame_index, dead
+    global character_state, character_images, character_rect, bg_offset_x, bg_offset_y, facing_right, life, current_life_image, last_h_pressed, last_s_pressed, last_w_pressed, hit_animation_frames, hit_frame_index, hit_animating, dying, dying_frame_index, dead, dash_target, dash_current, jump_velocity
     clock = pygame.time.Clock()
     running = True
+    
+    laying = False
+    laying_frame_index = 0
+    laying_animation_frames = []
+    jumping = False
+    jumping_frame_index = 0
+    jumping_animation_frames = []
+    initial_y = character_rect.y
 
     while running:
         screen.fill((0, 0, 0))
         draw_background(bg_offset_x, bg_offset_y)
 
-        # Gerenciar eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Controlar teclas pressionadas
         keys = pygame.key.get_pressed()
         moving = False
 
-        # Só permite movimento se o personagem não estiver morrendo ou morto
         if not dying and not dead:
             if keys[pygame.K_a]:
                 bg_offset_x += move_speed
@@ -97,29 +110,80 @@ def main():
                     facing_right = False
                 character_state = "andando"
                 moving = True
-            elif keys[pygame.K_d]:
+            if keys[pygame.K_d]:
                 bg_offset_x -= move_speed
                 if not facing_right:
                     facing_right = True
                 character_state = "andando"
                 moving = True
+            
+            if keys[pygame.K_s] and not laying and not last_s_pressed and not jumping:
+                laying = True
+                laying_frame_index = 0
+                laying_animation_frames = load_animation_images("deitando", flip=facing_right)
+                dash_current = bg_offset_x
+                if facing_right:
+                    dash_target = bg_offset_x - 200
+                else:
+                    dash_target = bg_offset_x + 200
+                last_s_pressed = True
 
-            # Atualizar as imagens do personagem com base no estado
-            if moving:
+            if keys[pygame.K_w] and not jumping and not last_w_pressed and not laying:
+                jumping = True
+                jumping_frame_index = 0
+                jumping_animation_frames = load_animation_images("pulando", flip=facing_right)
+                jump_velocity = jump_height
+                last_w_pressed = True
+
+            if laying:
+                character_images = laying_animation_frames
+            elif jumping:
+                character_images = jumping_animation_frames
+            elif moving:
                 character_images = load_animation_images("andando", flip=facing_right)
             elif character_state != "parado":
                 character_state = "parado"
                 character_images = load_animation_images("parado", flip=facing_right)
 
-        # Calcular o quadro atual da animação do personagem
-        current_frame = pygame.time.get_ticks() // 100 % len(character_images)
+        # Calcular o quadro atual apenas para animações contínuas
+        if not (laying or jumping or hit_animating or dying or dead):
+            current_frame = pygame.time.get_ticks() // 100 % len(character_images)
+        else:
+            current_frame = 0  # Default para evitar erros
 
-        # Gerenciar a tecla H para diminuir a vida e mostrar animação de hit
+        if laying and dash_current != dash_target:
+            if dash_target > dash_current:
+                dash_current = min(dash_current + dash_speed, dash_target)
+            else:
+                dash_current = max(dash_current - dash_speed, dash_target)
+            bg_offset_x = dash_current
+
+        if jumping:
+            character_rect.y += jump_velocity
+            jump_velocity += gravity
+            if jump_velocity < 0:  # Subindo
+                total_jump_time_up = jump_height / gravity
+                progress = (jump_height - jump_velocity) / jump_height
+                jumping_frame_index = int(progress * 4)
+                jumping_frame_index = min(jumping_frame_index, 3)
+            else:  # Descendo
+                height_reached = initial_y - character_rect.y
+                max_height = (jump_height * jump_height) / (2 * gravity)
+                if max_height > 0:
+                    progress = (max_height - height_reached) / max_height
+                    jumping_frame_index = 4 + int(progress * 4)
+                    jumping_frame_index = min(jumping_frame_index, 7)
+            if character_rect.y >= initial_y:
+                character_rect.y = initial_y
+                jumping = False
+                jump_velocity = 0
+                character_state = "parado"
+                character_images = load_animation_images("parado", flip=facing_right)
+
         if keys[pygame.K_h] and not last_h_pressed and life > 0 and not dying and not dead:
             life -= 1
             if life > 0:
                 current_life_image = life_images[life - 1]
-                # Carregar a animação de hit com o flip baseado na direção atual
                 hit_animation_frames = load_animation_images("hit", flip=facing_right)
                 hit_animating = True
                 hit_frame_index = 0
@@ -130,36 +194,44 @@ def main():
                 dying_frame_index = 0
             last_h_pressed = True
 
-        # Gerenciar a animação de hit
-        if hit_animating:
-            screen.blit(hit_animation_frames[hit_frame_index], character_rect)
-            hit_frame_index += 1
+        # Desenhar o personagem de acordo com o estado
+        if laying:
+            if laying_frame_index < len(laying_animation_frames):
+                screen.blit(laying_animation_frames[laying_frame_index], character_rect)
+                laying_frame_index += 1
+            if laying_frame_index >= len(laying_animation_frames):
+                laying = False
+                laying_frame_index = 0
+                character_state = "parado"
+                character_images = load_animation_images("parado", flip=facing_right)
+        elif jumping:
+            if jumping_frame_index < len(jumping_animation_frames):
+                screen.blit(jumping_animation_frames[jumping_frame_index], character_rect)
+        elif hit_animating:
+            if hit_frame_index < len(hit_animation_frames):
+                screen.blit(hit_animation_frames[hit_frame_index], character_rect)
+                hit_frame_index += 1
             if hit_frame_index >= len(hit_animation_frames):
                 hit_animating = False
                 hit_frame_index = 0
-
-        # Gerenciar a animação "morrendo"
         elif dying:
-            screen.blit(character_images[dying_frame_index], character_rect)
-            dying_frame_index += 1
+            if dying_frame_index < len(character_images):
+                screen.blit(character_images[dying_frame_index], character_rect)
+                dying_frame_index += 1
             if dying_frame_index >= len(character_images):
                 dying = False
                 dead = True
                 character_images = load_animation_images("morto", flip=facing_right)
-
-        # Se estiver morto, exibe a animação "morto"
         elif dead:
-            screen.blit(character_images[0], character_rect)
+            if len(character_images) > 0:
+                screen.blit(character_images[0], character_rect)
+        else:
+            if len(character_images) > 0:
+                screen.blit(character_images[current_frame], character_rect)
 
-        # Se não estiver em hit, morrendo ou morto, desenha a animação normal
-        elif not hit_animating:
-            screen.blit(character_images[current_frame], character_rect)
-
-        # Desenhar a vida
         if life > 0:
             screen.blit(life_images[life - 1], (20, 50))
 
-        # Se a vida chegou a zero e o personagem está morto
         if dead:
             font = pygame.font.Font(None, 74)
             text = font.render("+ Faleceu...", True, (255, 0, 0))
@@ -172,6 +244,10 @@ def main():
 
         if not keys[pygame.K_h]:
             last_h_pressed = False
+        if not keys[pygame.K_s]:
+            last_s_pressed = False
+        if not keys[pygame.K_w]:
+            last_w_pressed = False
 
         pygame.display.flip()
         clock.tick(30)
